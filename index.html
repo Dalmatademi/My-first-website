@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WanderLens &mdash; Explore the World</title>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0b0d12;
+  --surface: #13161e;
+  --surface2: #1a1f2c;
+  --border: #262d3e;
+  --text: #eceef3;
+  --text2: #959cb6;
+  --accent: #5b8dee;
+  --accent2: #f97366;
+  --gold: #f0b34b;
+  --radius: 16px;
+  --shadow: 0 8px 32px rgba(0,0,0,.45);
+  --trans: .4s cubic-bezier(.4,0,.2,1);
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+
+/* ===== NAVBAR ===== */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(11,13,18,.82);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 1.35rem; font-weight: 700;
+  letter-spacing: -.02em;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.nav-links { display: flex; gap: 4px; align-items: center; list-style: none; }
+.nav-links a {
+  color: var(--text2); text-decoration: none;
+  font-size: .8rem; font-weight: 500;
+  padding: 7px 12px; border-radius: 8px;
+  transition: var(--trans);
+}
+.nav-links a:hover, .nav-links a.active {
+  color: var(--text); background: var(--surface2);
+}
+.lang-toggle {
+  display: flex; gap: 3px; margin-left: 8px;
+  background: var(--surface); border-radius: 8px;
+  padding: 3px; border: 1px solid var(--border);
+}
+.lang-btn {
+  background: none; border: none;
+  color: var(--text2); cursor: pointer;
+  font-size: .75rem; font-weight: 600;
+  padding: 4px 10px; border-radius: 6px;
+  transition: var(--trans);
+  font-family: var(--font);
+}
+.lang-btn.active { background: var(--accent); color: #fff; }
+
+/* ===== HERO ===== */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(91,141,238,.12) 0%, transparent 70%);
+  top: -200px; right: -200px; pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute; width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(249,115,102,.10) 0%, transparent 70%);
+  bottom: -100px; left: -100px; pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(2.8rem, 7vw, 5rem);
+  font-weight: 800; letter-spacing: -.03em;
+  line-height: 1.1; margin-bottom: 16px;
+  background: linear-gradient(135deg, #fff 30%, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero p {
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  color: var(--text2); max-width: 600px; margin-bottom: 36px;
+}
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, var(--accent), #3b6fd8);
+  color: #fff; text-decoration: none;
+  padding: 14px 32px; border-radius: 50px;
+  font-weight: 600; font-size: .95rem;
+  box-shadow: 0 4px 20px rgba(91,141,238,.3);
+  transition: var(--trans);
+}
+.hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(91,141,238,.45);
+}
+
+/* ===== SECTION ===== */
+section {
+  padding: 80px 24px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+.section-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.section-header h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 700; letter-spacing: -.02em;
+  margin-bottom: 10px;
+}
+.section-header p {
+  color: var(--text2); font-size: 1rem;
+  max-width: 520px; margin: 0 auto;
+}
+.category-icon { font-size: 2rem; display: block; margin-bottom: 6px; }
+
+/* ===== COUNTRY GRID ===== */
+.country-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+/* ===== COUNTRY CARD ===== */
+.country-card {
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: transform var(--trans), box-shadow var(--trans);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.country-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 48px rgba(0,0,0,.5);
+}
+.card-bg {
+  height: 200px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px 20px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+.card-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, rgba(11,13,18,.92) 100%);
+  pointer-events: none;
+}
+.card-bg .flag-img {
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 38px; height: auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+  z-index: 2;
+}
+.card-bg .country-name {
+  position: relative;
+  z-index: 1;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(0,0,0,.6);
+}
+.card-body {
+  padding: 20px;
+}
+.card-body .desc {
+  color: var(--text2);
+  font-size: .9rem;
+  margin-bottom: 16px;
+  line-height: 1.55;
+}
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tag {
+  font-size: .7rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+
+/* ===== FLAG GRADIENT FALLBACKS ===== */
+.bg-fallback { background-size: cover; background-position: center; }
+.bg-italy { background-image: linear-gradient(135deg, #009246 0%, #009246 33%, #ffffff 33%, #ffffff 66%, #ce2b37 66%, #ce2b37 100%); }
+.bg-thailand { background-image: linear-gradient(180deg, #00247d 20%, #ffffff 20%, #ffffff 40%, #ed1c24 40%, #ed1c24 60%, #ffffff 60%, #ffffff 80%, #00247d 80%); }
+.bg-vietnam { background-image: radial-gradient(circle at 40% 50%, #ff0 6%, #da251d 6%, #da251d 100%); }
+.bg-indonesia { background-image: linear-gradient(180deg, #ce1126 50%, #ffffff 50%); }
+.bg-japan { background-image: radial-gradient(circle at 50% 45%, #bc002d 24%, #ffffff 24%); }
+.bg-brazil { background-image: linear-gradient(135deg, #009739 40%, #009739 40%, #fedf00 40%, #fedf00 60%, #009739 60%); }
+.bg-uae { background-image: linear-gradient(90deg, #ce1126 25%, #00732f 25%, #00732f 50%, #ffffff 50%, #ffffff 75%, #000 75%); }
+.bg-maldives { background-image: linear-gradient(135deg, #d21034 50%, #007e3a 50%); }
+.bg-greece { background-image: repeating-linear-gradient(0deg, #0d5eaf 0px, #0d5eaf 20px, #ffffff 20px, #ffffff 40px); }
+.bg-egypt { background-image: linear-gradient(180deg, #ce1126 33%, #ffffff 33%, #ffffff 66%, #000000 66%); }
+.bg-india { background-image: linear-gradient(180deg, #ff9933 33%, #ffffff 33%, #ffffff 66%, #138808 66%); }
+.bg-mexico { background-image: linear-gradient(90deg, #006341 33%, #ffffff 33%, #ffffff 66%, #ce1126 66%); }
+.bg-turkey { background-image: radial-gradient(circle at 45% 50%, #e30a17 50%, #e30a17 100%); }
+.bg-newzealand { background-image: linear-gradient(135deg, #00247d 35%, #00247d 0%, #1e3a6e 35%, #1e3a6e 100%); }
+.bg-norway { background-image: linear-gradient(135deg, #ba0c2f 30%, #ffffff 30%, #ffffff 33%, #00205b 33%, #00205b 37%, #ffffff 37%, #ffffff 40%, #ba0c2f 40%); }
+.bg-costarica { background-image: linear-gradient(180deg, #002b7f 20%, #ffffff 20%, #ffffff 37%, #ce1126 37%, #ce1126 63%, #ffffff 63%, #ffffff 80%, #002b7f 80%); }
+.bg-nepal { background-image: linear-gradient(135deg, #003893 40%, #003893 40%, #dc143c 40%, #dc143c 100%); }
+.bg-peru { background-image: linear-gradient(90deg, #d91023 33%, #ffffff 33%, #ffffff 66%, #d91023 66%); }
+.bg-bali { background-image: linear-gradient(180deg, #ce1126 50%, #ffffff 50%); }
+
+/* ===== CATEGORY COLORS ===== */
+.category-overall .section-header h2 { color: var(--gold); }
+.category-cheapest .section-header h2 { color: #6fcf97; }
+.category-exciting .section-header h2 { color: var(--accent2); }
+.category-relaxing .section-header h2 { color: #9b51e0; }
+.category-culture .section-header h2 { color: #f2994a; }
+.category-food .section-header h2 { color: #eb5757; }
+.category-nature .section-header h2 { color: #27ae60; }
+.category-adventure .section-header h2 { color: #2f80ed; }
+
+/* ===== FOOTER ===== */
+footer {
+  text-align: center; padding: 48px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text2); font-size: .85rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 700px) {
+  .nav-links a { font-size: .68rem; padding: 5px 8px; }
+  .country-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 2.2rem; }
+  section { padding: 56px 16px; }
+}
+
+/* ===== LANGUAGE ===== */
+[data-lang="en"] .lang-sq { display: none; }
+[data-lang="sq"] .lang-en { display: none; }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.country-card { animation: fadeUp .6s ease-out both; }
+.country-card:nth-child(1) { animation-delay: 0s; }
+.country-card:nth-child(2) { animation-delay: .1s; }
+.country-card:nth-child(3) { animation-delay: .2s; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">WanderLens</div>
+  <ul class="nav-links">
+    <li><a href="#overall" class="lang-en active">Categories</a><a href="#overall" class="lang-sq active">Kategoritë</a></li>
+    <li><a href="#footer" class="lang-en">About</a><a href="#footer" class="lang-sq">Rreth</a></li>
+    <li>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="sq">AL</button>
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <h1>
+    <span class="lang-en">See the World<br>Through New Eyes</span>
+    <span class="lang-sq">Shiko Botën<br>Me Sy të Rinj</span>
+  </h1>
+  <p class="lang-en">Curated travel recommendations across every category &mdash; from budget escapes to bucket-list adventures. Your next journey starts here.</p>
+  <p class="lang-sq">Rekomandime të kuruara udhëtimesh në çdo kategori &mdash; nga pushimet ekonomike deri te aventurat e jetës. Udhëtimi yt i ardhshëm fillon këtu.</p>
+  <a href="#overall" class="hero-cta">
+    <span class="lang-en">Explore Destinations</span>
+    <span class="lang-sq">Eksploro Destinacionet</span>
+    <span>&darr;</span>
+  </a>
+</header>
+
+<!-- ===== OVERALL BEST ===== -->
+<section id="overall" class="category-overall">
+  <div class="section-header">
+    <span class="category-icon">&#9733;</span>
+    <h2><span class="lang-en">&#9733; Overall Best</span><span class="lang-sq">&#9733; Më i Miri në Përgjithësi</span></h2>
+    <p class="lang-en">The country that does it all &mdash; culture, food, scenery, and unforgettable experiences.</p>
+    <p class="lang-sq">Vendi që i ka të gjitha &mdash; kulturë, ushqim, peizazh dhe përvoja të paharrueshme.</p>
+  </div>
+  <div class="country-grid">
+    <div class="country-card">
+      <div class="card-bg bg-italy" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.2)), url('https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=700&q=80'), linear-gradient(135deg, #009246 0%, #009246 33%, #ffffff 33%, #ffffff 66%, #ce2b37 66%, #ce2b37 100%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/it.png" alt="Italy flag" loading="lazy">
+        <span class="country-name">Italy</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">From the ancient ruins of Rome to the canals of Venice, the rolling hills of Tuscany to the Amalfi Coast &mdash; Italy is a masterpiece of art, food, and <em>la dolce vita</em>.</div>
+        <div class="desc lang-sq">Nga rrënojat antike të Romës te kanalet e Venecias, kodrat e Toskanës te Bregdeti Amalfi &mdash; Italia është një kryevepër arti, ushqimi dhe <em>la dolce vita</em>.</div>
+        <div class="card-tags">
+          <span class="tag lang-en">&#9733; Top Pick</span><span class="tag lang-sq">&#9733; Zgjedhja më e Mirë</span>
+          <span class="tag">&#127860; Food</span><span class="tag lang-en">&#127917; Culture</span><span class="tag lang-sq">&#127917; Kulturë</span><span class="tag">&#127965; History</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CHEAPEST ===== -->
+<section id="cheapest" class="category-cheapest">
+  <div class="section-header">
+    <span class="category-icon">&#36;</span>
+    <h2><span class="lang-en">&#36; Cheapest Destinations</span><span class="lang-sq">&#36; Destinacionet më të Lira</span></h2>
+    <p class="lang-en">Incredible experiences that won't break the bank &mdash; where your money goes further.</p>
+    <p class="lang-sq">Përvoja të jashtëzakonshme që nuk do të zbrazin xhepin &mdash; ku paratë tua vlejnë më shumë.</p>
+  </div>
+  <div class="country-grid">
+    <div class="country-card">
+      <div class="card-bg bg-thailand" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.15), rgba(0,0,0,.15)), url('https://images.unsplash.com/photo-1504214208698-ea1916a2195a?w=700&q=80'), linear-gradient(180deg, #00247d 20%, #ffffff 20%, #ffffff 40%, #ed1c24 40%, #ed1c24 60%, #ffffff 60%, #ffffff 80%, #00247d 80%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/th.png" alt="Thailand flag" loading="lazy">
+        <span class="country-name">Thailand</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Turquoise waters, golden temples, world-class street food for under $2, and beach bungalows for pocket change. Thailand is the ultimate budget paradise.</div>
+        <div class="desc lang-sq">Ujëra bruz, tempuj të artë, ushqim rruge i klasit botëror për nën $2 dhe shtëpi plazhi për një çmim fare të vogël. Tailanda është parajsa e buxhetit.</div>
+        <div class="card-tags">
+          <span class="tag lang-en">&#36; Budget-friendly</span><span class="tag lang-sq">&#36; Me kosto të ulët</span>
+          <span class="tag">&#127860; Street Food</span><span class="tag">&#127958; Beaches</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-vietnam" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.2)), url('https://images.unsplash.com/photo-1528127269322-539801943592?w=700&q=80'), radial-gradient(circle at 40% 50%, #ff0 6%, #da251d 6%, #da251d 100%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/vn.png" alt="Vietnam flag" loading="lazy">
+        <span class="country-name">Vietnam</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Ha Long Bay, pho for pennies, ancient towns, and motorbike adventures through breathtaking landscapes. Southeast Asia's best-kept value secret.</div>
+        <div class="desc lang-sq">Gjiri Ha Long, pho për disa qindarka, qytete antike dhe aventura me motor nëpër peizazhe befasuese. Sekreti më i mirë i Azisë Juglindore.</div>
+        <div class="card-tags">
+          <span class="tag lang-en">&#36; Super cheap</span><span class="tag lang-sq">&#36; Shumë i lirë</span>
+          <span class="tag lang-en">&#127959; Scenery</span><span class="tag lang-sq">&#127959; Peizazh</span><span class="tag">&#127860; Pho</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-indonesia" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.2)), url('https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=700&q=80'), linear-gradient(180deg, #ce1126 50%, #ffffff 50%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/id.png" alt="Indonesia flag" loading="lazy">
+        <span class="country-name">Indonesia</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Thousands of islands, ancient temples, volcanic landscapes, and some of the world's best diving &mdash; all at a fraction of Western prices.</div>
+        <div class="desc lang-sq">Mijëra ishuj, tempuj antikë, peizazhe vullkanike dhe disa nga zhytjet më të mira në botë &mdash; të gjitha me një pjesë të çmimeve perëndimore.</div>
+        <div class="card-tags">
+          <span class="tag lang-en">&#36; Affordable</span><span class="tag lang-sq">&#36; I përballueshëm</span>
+          <span class="tag">&#127754; Diving</span><span class="tag">&#9968;&#65039; Volcanoes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== MOST EXCITING ===== -->
+<section id="exciting" class="category-exciting">
+  <div class="section-header">
+    <span class="category-icon">&#9889;</span>
+    <h2><span class="lang-en">&#9889; Most Exciting</span><span class="lang-sq">&#9889; Më Eksitueset</span></h2>
+    <p class="lang-en">Non-stop thrills, neon lights, and pulse-pounding energy &mdash; for adrenaline junkies.</p>
+    <p class="lang-sq">Eksitim pa pushim, drita neoni dhe energji që të bën të rrahë zemra &mdash; për kërkuesit e adrenalinës.</p>
+  </div>
+  <div class="country-grid">
+    <div class="country-card">
+      <div class="card-bg bg-japan" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.2)), url('https://images.unsplash.com/photo-1506045412240-22980140a405?w=700&q=80'), radial-gradient(circle at 50% 45%, #bc002d 24%, #ffffff 24%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/jp.png" alt="Japan flag" loading="lazy">
+        <span class="country-name">Japan</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Shibuya's neon chaos, bullet trains, ancient temples, anime culture, and the best vending machines on Earth. Tokyo alone is a lifetime of discovery.</div>
+        <div class="desc lang-sq">Kaosi neon i Shibuyas, trenat e shpejtë, tempujt antikë, kultura anime dhe makinat më të mira shitëse në Tokë. Vetëm Tokio është një jetë zbulimesh.</div>
+        <div class="card-tags">
+          <span class="tag">&#127760; Tech</span><span class="tag">&#127917; Culture</span><span class="tag">&#127860; Sushi</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-brazil" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25)), url('https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=700&q=80'), linear-gradient(135deg, #009739 40%, #009739 40%, #fedf00 40%, #fedf00 60%, #009739 60%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/br.png" alt="Brazil flag" loading="lazy">
+        <span class="country-name">Brazil</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Carnival, samba, Christ the Redeemer, the Amazon rainforest, and beaches that stretch forever. Brazil is a sensory explosion in the best way.</div>
+        <div class="desc lang-sq">Karnavali, samba, Krishti Shpëtimtar, pylli i Amazonës dhe plazhe që shtrihen pafund. Brazili është një shpërthim ndijor në mënyrën më të mirë.</div>
+        <div class="card-tags">
+          <span class="tag">&#127908; Carnival</span><span class="tag">&#127754; Amazon</span><span class="tag">&#9917; Football</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-uae" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25)), url('https://images.unsplash.com/photo-1518684079-3c830dcef090?w=700&q=80'), linear-gradient(90deg, #ce1126 25%, #00732f 25%, #00732f 50%, #ffffff 50%, #ffffff 75%, #000 75%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/ae.png" alt="UAE flag" loading="lazy">
+        <span class="country-name">UAE</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">The world's tallest building, indoor skiing in the desert, man-made islands, and futuristic architecture. Dubai and Abu Dhabi are playgrounds of the future.</div>
+        <div class="desc lang-sq">Ndërtesa më e lartë në botë, ski në ambiente të mbyllura në shkretëtirë, ishuj artificialë dhe arkitekturë futuristike. Dubai dhe Abu Dhabi janë shesh lojrash të së ardhmes.</div>
+        <div class="card-tags">
+          <span class="tag">&#127984; Luxury</span><span class="tag lang-en">&#127963; Architecture</span><span class="tag lang-sq">&#127963; Arkitekturë</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== MOST RELAXING ===== -->
+<section id="relaxing" class="category-relaxing">
+  <div class="section-header">
+    <span class="category-icon">&#9728;&#65039;</span>
+    <h2><span class="lang-en">&#9728;&#65039; Most Relaxing</span><span class="lang-sq">&#9728;&#65039; Më Relaksueset</span></h2>
+    <p class="lang-en">Peaceful escapes where time slows down and stress melts away.</p>
+    <p class="lang-sq">Ikje paqësore ku koha ngadalësohet dhe stresi zhduket.</p>
+  </div>
+  <div class="country-grid">
+    <div class="country-card">
+      <div class="card-bg bg-maldives" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.15), rgba(0,0,0,.15)), url('images/maldives.jpg'), linear-gradient(135deg, #d21034 50%, #007e3a 50%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/mv.png" alt="Maldives flag" loading="lazy">
+        <span class="country-name">Maldives</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Overwater bungalows, crystal-clear lagoons, private island resorts, and sunsets that paint the sky. The ultimate definition of paradise.</div>
+        <div class="desc lang-sq">Shtëpi mbi ujë, laguna kristal, resorte në ishuj privatë dhe perëndime që pikturojnë qiellin. Përkufizimi më i mirë i parajsës.</div>
+        <div class="card-tags">
+          <span class="tag lang-en">&#127796; Overwater Villas</span><span class="tag lang-sq">&#127796; Vila mbi ujë</span>
+          <span class="tag">&#127754; Snorkeling</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-greece" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.15), rgba(0,0,0,.15)), url('https://images.unsplash.com/photo-1533105079780-92b9be482077?w=700&q=80'), repeating-linear-gradient(0deg, #0d5eaf 0px, #0d5eaf 20px, #ffffff 20px, #ffffff 40px);">
+        <img class="flag-img" src="https://flagcdn.com/w80/gr.png" alt="Greece flag" loading="lazy">
+        <span class="country-name">Greece</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Whitewashed villages, turquoise coves, ancient ruins, and sunsets in Santorini that redefine romance. Pure Mediterranean serenity.</div>
+        <div class="desc lang-sq">Fshatra të bardha, gjire bruz, rrënoja antike dhe perëndime në Santorini që ripërcaktojnë romancën. Qetësi e pastër mesdhetare.</div>
+        <div class="card-tags">
+          <span class="tag lang-en">&#127959; Islands</span><span class="tag lang-sq">&#127959; Ishuj</span>
+          <span class="tag">&#127860; Cuisine</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-bali" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.15), rgba(0,0,0,.15)), url('images/bali-relax.jpg'), linear-gradient(180deg, #ce1126 50%, #ffffff 50%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/id.png" alt="Indonesia flag" loading="lazy">
+        <span class="country-name">Bali, Indonesia</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Rice terraces, spiritual temples, yoga retreats, and lush jungles. Bali isn't just a destination &mdash; it's a state of mind.</div>
+        <div class="desc lang-sq">Terrina orizi, tempuj shpirtërorë, qendra joge dhe xhungla të harlisura. Bali nuk është thjesht një destinacion &mdash; është një gjendje shpirtërore.</div>
+        <div class="card-tags">
+          <span class="tag">&#128153; Spiritual</span><span class="tag lang-en">&#127793; Nature</span><span class="tag lang-sq">&#127793; Natyrë</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BEST CULTURE ===== -->
+<section id="culture" class="category-culture">
+  <div class="section-header">
+    <span class="category-icon">&#127925;</span>
+    <h2><span class="lang-en">&#127925; Best Culture</span><span class="lang-sq">&#127925; Kultura më e Mirë</span></h2>
+    <p class="lang-en">Ancient traditions, living history, and civilizations that shaped the modern world.</p>
+    <p class="lang-sq">Tradita antike, histori e gjallë dhe qytetërime që formësuan botën moderne.</p>
+  </div>
+  <div class="country-grid">
+    <div class="country-card">
+      <div class="card-bg bg-japan" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.2)), url('https://images.unsplash.com/photo-1506045412240-22980140a405?w=700&q=80'), radial-gradient(circle at 50% 45%, #bc002d 24%, #ffffff 24%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/jp.png" alt="Japan flag" loading="lazy">
+        <span class="country-name">Japan</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Ancient tea ceremonies, kabuki theater, samurai heritage, and a culture where tradition and hyper-modernity dance together in harmony.</div>
+        <div class="desc lang-sq">Ceremoni antike çaji, teatër kabuki, trashëgimi samurai dhe një kulturë ku tradita dhe moderniteti kërcejnë së bashku në harmoni.</div>
+        <div class="card-tags">
+          <span class="tag">&#9968;&#65039; Temples</span><span class="tag">&#127917; Traditions</span><span class="tag">&#127917; Anime</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-egypt" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.2)), url('images/egypt.jpg'), linear-gradient(180deg, #ce1126 33%, #ffffff 33%, #ffffff 66%, #000000 66%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/eg.png" alt="Egypt flag" loading="lazy">
+        <span class="country-name">Egypt</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">The Pyramids of Giza, the Sphinx, temples along the Nile, and 7,000 years of civilization. Egypt is the definition of ancient wonder.</div>
+        <div class="desc lang-sq">Piramidat e Gizës, Sfinksi, tempujt përgjatë Nilit dhe 7,000 vjet qytetërim. Egjipti është përkufizimi i mrekullisë antike.</div>
+        <div class="card-tags">
+          <span class="tag">&#127963; Pyramids</span><span class="tag lang-en">&#127759; Nile</span><span class="tag lang-sq">&#127759; Nili</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-india">
+        <img class="flag-img" src="https://flagcdn.com/w80/in.png" alt="India flag" loading="lazy">
+        <span class="country-name">India</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">The Taj Mahal, vibrant festivals, classical dance, spices, and a tapestry of languages and traditions spanning millennia. A world in one country.</div>
+        <div class="desc lang-sq">Taxh Mahali, festime të gjalla, valle klasike, erëza dhe një mozaik gjuhësh dhe traditash që përfshin mijëvjeçarë. Një botë në një vend.</div>
+        <div class="card-tags">
+          <span class="tag">&#127963; Taj Mahal</span><span class="tag">&#127860; Spices</span><span class="tag">&#127925; Festivals</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BEST FOOD ===== -->
+<section id="food" class="category-food">
+  <div class="section-header">
+    <span class="category-icon">&#127860;</span>
+    <h2><span class="lang-en">&#127860; Best Food</span><span class="lang-sq">&#127860; Ushqimi më i Mirë</span></h2>
+    <p class="lang-en">Destinations where every meal is a masterpiece and flavor knows no bounds.</p>
+    <p class="lang-sq">Destinacione ku çdo vakt është kryevepër dhe shija nuk ka kufij.</p>
+  </div>
+  <div class="country-grid">
+    <div class="country-card">
+      <div class="card-bg bg-italy" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.2)), url('https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=700&q=80'), linear-gradient(135deg, #009246 0%, #009246 33%, #ffffff 33%, #ffffff 66%, #ce2b37 66%, #ce2b37 100%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/it.png" alt="Italy flag" loading="lazy">
+        <span class="country-name">Italy</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Pasta, pizza, gelato, espresso, and regional cuisines that vary from valley to valley. Italian food is a UNESCO-recognized cultural treasure.</div>
+        <div class="desc lang-sq">Pasta, pica, gelato, espresso dhe kuzhina rajonale që ndryshojnë nga një luginë në tjetrën. Ushqimi italian është një thesar kulturor i njohur nga UNESCO.</div>
+        <div class="card-tags">
+          <span class="tag">&#127829; Pizza</span><span class="tag">&#127837; Wine</span><span class="tag">&#127855; Gelato</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-mexico">
+        <img class="flag-img" src="https://flagcdn.com/w80/mx.png" alt="Mexico flag" loading="lazy">
+        <span class="country-name">Mexico</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Tacos, mole, tamales, and a UNESCO Intangible Cultural Heritage cuisine. Bold, colorful, and unapologetically delicious.</div>
+        <div class="desc lang-sq">Tacos, mole, tamales dhe një kuzhinë e trashëgimisë kulturore jomateriale të UNESCO-s. E guximshme, ngjyrëplotë dhe e shijshme pa rezerva.</div>
+        <div class="card-tags">
+          <span class="tag">&#127838; Tacos</span><span class="tag">&#127863; Tequila</span>
+          <span class="tag lang-en">&#127860; Street Food</span><span class="tag lang-sq">&#127860; Ushqim Rruge</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-turkey" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.2)), url('images/turkey-food.jpg'), radial-gradient(circle at 45% 50%, #e30a17 50%, #e30a17 100%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/tr.png" alt="Turkey flag" loading="lazy">
+        <span class="country-name">Turkey</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Kebabs, baklava, Turkish delight, and a coffee culture that's 500 years old. Ottoman, Middle Eastern, and Mediterranean flavors collide.</div>
+        <div class="desc lang-sq">Qebapë, bakllava, kënaqësi turke dhe një kulturë kafeje 500-vjeçare. Shije osmane, të Lindjes së Mesme dhe mesdhetare përplasen.</div>
+        <div class="card-tags">
+          <span class="tag">&#127855; Baklava</span><span class="tag">&#127860; Kebab</span><span class="tag">&#9749; Coffee</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BEST NATURE ===== -->
+<section id="nature" class="category-nature">
+  <div class="section-header">
+    <span class="category-icon">&#127796;</span>
+    <h2><span class="lang-en">&#127796; Best Nature</span><span class="lang-sq">&#127796; Natyra më e Mirë</span></h2>
+    <p class="lang-en">Breathtaking landscapes, untouched wilderness, and the most beautiful places on Earth.</p>
+    <p class="lang-sq">Peizazhe befasuese, natyrë e paprekur dhe vendet më të bukura në Tokë.</p>
+  </div>
+  <div class="country-grid">
+    <div class="country-card">
+      <div class="card-bg bg-newzealand" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.15), rgba(0,0,0,.15)), url('https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=700&q=80'), linear-gradient(135deg, #00247d 35%, #00247d 0%, #1e3a6e 35%, #1e3a6e 100%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/nz.png" alt="New Zealand flag" loading="lazy">
+        <span class="country-name">New Zealand</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Fiords, glaciers, volcanic peaks, glowworm caves, and Middle-earth itself. No country packs more natural diversity per square mile.</div>
+        <div class="desc lang-sq">Fjorde, akullnaja, maja vullkanike, shpella krimbash ndriçues dhe vetë Toka e Mesme. Asnjë vend nuk ka më shumë diversitet natyror për milje katror.</div>
+        <div class="card-tags">
+          <span class="tag">&#9968;&#65039; Mountains</span><span class="tag">&#127796; Fiords</span>
+          <span class="tag lang-en">&#127758; Glaciers</span><span class="tag lang-sq">&#127758; Akullnaja</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-norway">
+        <img class="flag-img" src="https://flagcdn.com/w80/no.png" alt="Norway flag" loading="lazy">
+        <span class="country-name">Norway</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Deep blue fiords, the Northern Lights, Arctic wilderness, and the midnight sun. Norway is nature at its most dramatic and majestic.</div>
+        <div class="desc lang-sq">Fjorde blu të thella, Dritat Veriore, natyrë arktike dhe dielli i mesnatës. Norvegjia është natyra në formën e saj më dramatike dhe madhështore.</div>
+        <div class="card-tags">
+          <span class="tag">&#127759; Fjords</span>
+          <span class="tag lang-en">&#10024; Northern Lights</span><span class="tag lang-sq">&#10024; Dritat Veriore</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-costarica">
+        <img class="flag-img" src="https://flagcdn.com/w80/cr.png" alt="Costa Rica flag" loading="lazy">
+        <span class="country-name">Costa Rica</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Cloud forests, active volcanoes, rainbow-colored wildlife, and both Pacific and Caribbean coasts. "Pura Vida" is more than a phrase &mdash; it's a philosophy.</div>
+        <div class="desc lang-sq">Pyje reve, vullkane aktive, kafshë të egra shumëngjyrëshe dhe brigje të Oqeanit Paqësor dhe Karaibe. "Pura Vida" është më shumë se një frazë &mdash; është një filozofi.</div>
+        <div class="card-tags">
+          <span class="tag">&#127793; Rainforest</span>
+          <span class="tag lang-en">&#128029; Wildlife</span><span class="tag lang-sq">&#128029; Kafshë të egra</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BEST ADVENTURE ===== -->
+<section id="adventure" class="category-adventure">
+  <div class="section-header">
+    <span class="category-icon">&#9968;&#65039;</span>
+    <h2><span class="lang-en">&#9968;&#65039; Best Adventure</span><span class="lang-sq">&#9968;&#65039; Aventura më e Mirë</span></h2>
+    <p class="lang-en">For those who climb higher, dive deeper, and push beyond the ordinary.</p>
+    <p class="lang-sq">Për ata që ngjiten më lart, zhyten më thellë dhe shkojnë përtej të zakonshmes.</p>
+  </div>
+  <div class="country-grid">
+    <div class="country-card">
+      <div class="card-bg bg-nepal">
+        <img class="flag-img" src="https://flagcdn.com/w80/np.png" alt="Nepal flag" loading="lazy">
+        <span class="country-name">Nepal</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Home to the world's highest peaks, including Everest. Trekking through the Himalayas is the adventure of a lifetime &mdash; literally on top of the world.</div>
+        <div class="desc lang-sq">Shtëpia e majave më të larta në botë, duke përfshirë Everestin. Ecja nëpër Himalaje është aventura e jetës &mdash; fjalë për fjalë në majë të botës.</div>
+        <div class="card-tags">
+          <span class="tag">&#9968;&#65039; Everest</span>
+          <span class="tag lang-en">&#127955; Trekking</span><span class="tag lang-sq">&#127955; Ecje</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-newzealand" style="background-image: linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.2)), url('https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=700&q=80'), linear-gradient(135deg, #00247d 35%, #00247d 0%, #1e3a6e 35%, #1e3a6e 100%);">
+        <img class="flag-img" src="https://flagcdn.com/w80/nz.png" alt="New Zealand flag" loading="lazy">
+        <span class="country-name">New Zealand</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">Bungee jumping, whitewater rafting, jet boating, skydiving, and glacier hikes &mdash; New Zealand practically invented the adventure travel playbook.</div>
+        <div class="desc lang-sq">Kërcim me litar, rafting në ujëra të rrëmbyeshëm, varkë me motor, hedhje me parashutë dhe ecje në akullnaja &mdash; Zelanda e Re praktikisht shpiku aventurën.</div>
+        <div class="card-tags">
+          <span class="tag lang-en">&#128170; Bungee</span><span class="tag lang-sq">&#128170; Kërcim me litar</span>
+          <span class="tag">&#9973; Rafting</span>
+        </div>
+      </div>
+    </div>
+    <div class="country-card">
+      <div class="card-bg bg-peru">
+        <img class="flag-img" src="https://flagcdn.com/w80/pe.png" alt="Peru flag" loading="lazy">
+        <span class="country-name">Peru</span>
+      </div>
+      <div class="card-body">
+        <div class="desc lang-en">The Inca Trail to Machu Picchu, the Amazon rainforest, Colca Canyon, and sandboarding on Huacachina dunes. Ancient paths and wild frontiers.</div>
+        <div class="desc lang-sq">Shtegu Inca drejt Machu Picchu, pylli i Amazonës, Kanioni Colca dhe sandboarding në dunat Huacachina. Shtigje antike dhe kufij të egër.</div>
+        <div class="card-tags">
+          <span class="tag">&#127963; Machu Picchu</span><span class="tag">&#127754; Amazon</span>
+          <span class="tag lang-en">&#127955; Inca Trail</span><span class="tag lang-sq">&#127955; Shtegu Inca</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer id="footer">
+  <p class="lang-en">
+    &#127758; <strong>WanderLens</strong> &mdash; Curated travel recommendations. Built with &hearts; for explorers.<br>
+    <span style="color:var(--text2);font-size:.8rem;">Photos from Unsplash &amp; Wikimedia Commons &bull; Flags from FlagCDN</span>
+  </p>
+  <p class="lang-sq">
+    &#127758; <strong>WanderLens</strong> &mdash; Rekomandime udhëtimesh të kuruara. Krijuar me &hearts; për eksploruesit.<br>
+    <span style="color:var(--text2);font-size:.8rem;">Fotot nga Unsplash &amp; Wikimedia Commons &bull; Flamujt nga FlagCDN</span>
+  </p>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+  const langBtns = document.querySelectorAll('.lang-btn');
+  const html = document.documentElement;
+  langBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lang = btn.dataset.lang;
+      html.setAttribute('data-lang', lang);
+      langBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      try { localStorage.setItem('wanderlens-lang', lang); } catch(e) {}
+    });
+  });
+  try {
+    const saved = localStorage.getItem('wanderlens-lang');
+    if (saved === 'sq' || saved === 'en') {
+      html.setAttribute('data-lang', saved);
+      document.querySelector('.lang-btn[data-lang="' + saved + '"]').classList.add('active');
+      document.querySelector('.lang-btn[data-lang="' + (saved === 'en' ? 'sq' : 'en') + '"]').classList.remove('active');
+    }
+  } catch(e) {}
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  });
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+  if (sections.length && navLinks.length) {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          navLinks.forEach(a => {
+            if (a.getAttribute('href') === '#' + id) a.classList.add('active');
+            else a.classList.remove('active');
+          });
+        }
+      });
+    }, { threshold: .3 });
+    sections.forEach(s => observer.observe(s));
+  }
+})();
+</script>
+</body>
+</html>
